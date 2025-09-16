@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroCore - Airport Operating System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .loading {
+            @apply animate-spin inline-block w-6 h-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full;
+        }
+        .toast {
+            @apply fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded shadow-lg transform transition-transform duration-300 ease-in-out;
+            transform: translateY(150%);
+        }
+        .toast.show {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <span class="font-bold text-xl">AeroCore</span>
+                    <div class="hidden md:flex space-x-4">
+                        <a href="#" class="hover:bg-blue-700 px-3 py-2 rounded">Flights</a>
+                        <a href="#" class="hover:bg-blue-700 px-3 py-2 rounded">Check-in</a>
+                        <a href="#" class="hover:bg-blue-700 px-3 py-2 rounded">Baggage</a>
+                        <a href="#" class="hover:bg-blue-700 px-3 py-2 rounded">Operations</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="userBtn" class="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded">
+                        <i class="bi bi-person-circle"></i>
+                        <span>Login</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Flight Status Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Flight Information -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-4">Active Flights</h2>
+                <div id="flightsList" class="space-y-4">
+                    <div class="animate-pulse">
+                        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div class="space-y-3 mt-4">
+                            <div class="h-4 bg-gray-200 rounded"></div>
+                            <div class="h-4 bg-gray-200 rounded"></div>
+                            <div class="h-4 bg-gray-200 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Passenger Check-in -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-4">Quick Check-in</h2>
+                <form id="checkInForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Booking Reference</label>
+                        <input type="text" id="pnr" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Last Name</label>
+                        <input type="text" id="lastName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        Check In
+                    </button>
+                </form>
+            </div>
+
+            <!-- Baggage Tracking -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-4">Baggage Tracking</h2>
+                <form id="baggageForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Bag Tag Number</label>
+                        <input type="text" id="bagTag" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        Track Baggage
+                    </button>
+                </form>
+                <div id="baggageStatus" class="mt-4 hidden">
+                    <div class="flex items-center space-x-2">
+                        <i class="bi bi-luggage text-green-500"></i>
+                        <span class="text-sm text-gray-600">Status will appear here</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operations Dashboard -->
+        <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold mb-4">Operations Dashboard</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Flight</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gate</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="operationsTable" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
+                                Loading operations data...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" role="alert"></div>
+
+    <script>
+        // API Configuration
+        const API_BASE = 'https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one';
+        const API_KEY = 'E4UA9V2AP5Q9swMkoKfxS3efGIy2';
+        const APP_SLUG = 'aerocore-123456';
+
+        // Helper Functions
+        const showToast = (message, type = 'success') => {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            toast.style.backgroundColor = type === 'success' ? '#10B981' : '#EF4444';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        };
+
+        const handleError = (error) => {
+            console.error('Error:', error);
+            showToast(error.message || 'An error occurred', 'error');
+        };
+
+        // Initialize App
+        const initializeApp = async () => {
+            try {
+                // Set up MongoDB collection
+                await fetch(`${API_BASE}/mongodb`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appSlug: APP_SLUG,
+                        action: 'create',
+                        collection: 'flights',
+                        data: {
+                            flightNumber: 'AA123',
+                            origin: 'LAX',
+                            destination: 'JFK',
+                            status: 'SCHEDULED',
+                            gate: 'A1',
+                            departureTime: new Date().toISOString()
+                        }
+                    })
+                });
+
+                loadFlights();
+                loadOperations();
+            } catch (error) {
+                handleError(error);
+            }
+        };
+
+        // Load Flights
+        const loadFlights = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/mongodb`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appSlug: APP_SLUG,
+                        action: 'read',
+                        collection: 'flights'
+                    })
+                });
+
+                const data = await response.json();
+                const flightsList = document.getElementById('flightsList');
+                
+                if (data.success && data.result.length > 0) {
+                    flightsList.innerHTML = data.result.map(flight => `
+                        <div class="border-l-4 border-blue-500 pl-4 mb-4">
+                            <div class="font-bold">${flight.flightNumber}</div>
+                            <div class="text-sm text-gray-600">
+                                ${flight.origin} → ${flight.destination}
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                Gate: ${flight.gate} | Status: ${flight.status}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    flightsList.innerHTML = '<p class="text-gray-500">No active flights</p>';
+                }
+            } catch (error) {
+                handleError(error);
+            }
+        };
+
+        // Check-in Form Handler
+        document.getElementById('checkInForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pnr = document.getElementById('pnr').value;
+            const lastName = document.getElementById('lastName').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/mongodb`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appSlug: APP_SLUG,
+                        action: 'create',
+                        collection: 'checkins',
+                        data: {
+                            pnr,
+                            lastName,
+                            timestamp: new Date().toISOString(),
+                            status: 'CHECKED_IN'
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showToast('Check-in successful!');
+                    e.target.reset();
+                }
+            } catch (error) {
+                handleError(error);
+            }
+        });
+
+        // Baggage Form Handler
+        document.getElementById('baggageForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bagTag = document.getElementById('bagTag').value;
+            const baggageStatus = document.getElementById('baggageStatus');
+
+            try {
+                const response = await fetch(`${API_BASE}/mongodb`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appSlug: APP_SLUG,
+                        action: 'read',
+                        collection: 'baggage',
+                        conditions: { bagTagNumber: bagTag }
+                    })
+                });
+
+                const data = await response.json();
+                baggageStatus.classList.remove('hidden');
+                
+                if (data.success && data.result.length > 0) {
+                    const bag = data.result[0];
+                    baggageStatus.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <i class="bi bi-luggage text-green-500"></i>
+                            <span class="text-sm text-gray-600">Last seen: ${bag.location}</span>
+                        </div>
+                    `;
+                } else {
+                    baggageStatus.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <i class="bi bi-exclamation-triangle text-yellow-500"></i>
+                            <span class="text-sm text-gray-600">Baggage not found</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                handleError(error);
+            }
+        });
+
+        // Load Operations Data
+        const loadOperations = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/mongodb`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appSlug: APP_SLUG,
+                        action: 'read',
+                        collection: 'flights'
+                    })
+                });
+
+                const data = await response.json();
+                const operationsTable = document.getElementById('operationsTable');
+                
+                if (data.success && data.result.length > 0) {
+                    operationsTable.innerHTML = data.result.map(flight => `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">${flight.flightNumber}</div>
+                                <div class="text-sm text-gray-500">${flight.origin} → ${flight.destination}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    ${flight.status}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                ${flight.gate}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button onclick="updateFlightStatus('${flight._id}')" class="text-blue-600 hover:text-blue-900">
+                                    Update Status
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    operationsTable.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
+                                No operations data available
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                handleError(error);
+            }
+        };
+
+        // Update Flight Status
+        const updateFlightStatus = async (flightId) => {
+            try {
+                const response = await fetch(`${API_BASE}/mongodb`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        appSlug: APP_SLUG,
+                        action: 'update',
+                        collection: 'flights',
+                        conditions: { _id: flightId },
+                        data: { status: 'BOARDING' }
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showToast('Flight status updated successfully');
+                    loadOperations();
+                    loadFlights();
+                }
+            } catch (error) {
+                handleError(error);
+            }
+        };
+
+        // Initialize the application
+        initializeApp();
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
